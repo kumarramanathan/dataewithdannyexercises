@@ -49,3 +49,91 @@ B	          curry,ramen,sushi
 C	          ramen
 ****************************************************************************************************************************
 
+If each $1 spent equates to 10 points and sushi has a 2x points multiplier - how many points would each customer have?
+
+SELECT 
+       a.customer_id ,
+       SUM(CASE WHEN a.product_id = 1 THEN  b.price * 2 * 10
+		            ELSE b.price * 10
+       	        END) AS points
+FROM 
+	      sales a 
+JOIN 
+        menu b 
+ON 
+	      a.product_id = b.product_id
+GROUP BY 
+	      a.customer_id
+ORDER BY
+	      a.customer_id
+;
+Output:
+====== 
+customer_id | points 
+-------------+--------
+ A           |    860
+ B           |    940
+ C           |    360
+(3 rows)
+********************************************************************************************************************************
+What is the total items and amount spent for each member before they became a member?
+
+postgres=# with cte as (SELECT a.customer_id,a.product_id,a.order_date FROM sales a JOIN members b ON a.customer_id = b.customer_id where  a.order_date < b.join_date) select a.customer_id,count(distinct a.product_id),sum(b.price) from cte a join menu b on a.product_id = b.product_id group by a.customer_id; 
+
+OUTPUT:
+======
+customer_id | count | sum 
+-------------+-------+-----
+ A           |     2 |  25
+ B           |     2 |  40
+(2 rows) 
+
+*********************************************************************************************************************************
+In the first week after a customer joins the program (including their join date) they earn 2x points on all items, not just sushi - how many points do customer A and B have at the end of January?
+
+Two answers derived : 
+
+Scenario 1:
+one considering the join date - usually when members joins only we have the points provided to provide offer:
+
+postgres=# SELECT a.customer_id ,
+postgres-#  SUM (CASE WHEN a.product_id = 1 THEN b.price*20
+postgres(#        WHEN a.order_date between c.join_date and c.join_date + 6 THEN  b.price * 20
+postgres(#        ELSE b.price * 10
+postgres(#        END) AS points  
+postgres-# FROM sales a JOIN menu b ON a.product_id = b.product_id
+postgres-#  JOIN members c ON a.customer_id = c.customer_id
+postgres-# WHERE a.order_date <= '2021-01-31' and a.order_date >= c.join_date  GROUP BY a.customer_id ORDER BY a.customer_id                       
+postgres-# ;
+
+OUTPUT 1:
+customer_id | points 
+-------------+--------
+ A           |   1020
+ B           |    320
+(2 rows)
+
+Scenario 2:
+one not onsidering the join date - Here member joined the program then we are providing ponts for earlier purchases
+
+postgres=# SELECT a.customer_id ,
+ SUM (CASE WHEN a.product_id = 1 THEN b.price*20
+       WHEN a.order_date between c.join_date and c.join_date + 6 THEN  b.price * 20
+       ELSE b.price * 10
+       END) AS points  
+FROM sales a JOIN menu b ON a.product_id = b.product_id
+ JOIN members c ON a.customer_id = c.customer_id
+WHERE a.order_date <= '2021-01-31' GROUP BY a.customer_id ORDER BY a.customer_id                       
+;
+
+OUTPUT:
+=======
+
+customer_id | points 
+-------------+--------
+ A           |   1370
+ B           |    820
+(2 rows)
+
+**************************************************************************************************************************************************
+
