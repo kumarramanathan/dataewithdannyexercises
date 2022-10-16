@@ -134,7 +134,64 @@ postgres=# \d runner_orders1;
 ALL SET ready start !
 *******************************************************************************************************************************************************
 
+PIZZA METRICS:
 
+1. How many pizzas were ordered ? pizza _id present in customer_orders1 table can be used. 
+
+postgres=# select count(pizza_id) from customer_orders1;
+ count 
+-------
+    14
+(1 row)
+
+2.How many unqiue customer orders were made ?
+
+postgres=# select count(distinct order_id) from customer_orders1;
+ count 
+-------
+    10
+(1 row)
+
+3.How many successful orders were delivered by each runner?
+
+postgres=# select runner_id,count(runner_id) from runner_orders1 where cancellation is null OR  
+cancellation not in ('Restaurant Cancellation','Customer Cancellation') group by runner_id order by runner_id;
+ runner_id | count 
+-----------+-------
+         1 |     4
+         2 |     3
+         3 |     1
+(3 rows)
+
+4. How many of each type of pizza was delivered?
+
+postgres=# select c.pizza_name,count(*) from runner_orders1 a join
+customer_orders1 b on a.order_id = b.order_id join pizza_names c on c.pizza_id = b.pizza_id 
+where a.cancellation is null OR a.cancellation not in ('Restaurant Cancellation','Customer Cancellation') 
+group by c.pizza_name order by c.pizza_name ;  
+
+ pizza_name | count 
+------------+-------
+ Meatlovers |     9
+ Vegetarian |     3
+(2 rows)
+
+5. How many Vegetarian and Meatlovers were ordered by each customer?
+
+postgres=# select a.customer_id,b.pizza_name,count(*) from customer_orders1 a join pizza_names b on a.pizza_id = b.pizza_id group by a.customer_id,b.pizza_name order by a.customer_id;  
+ customer_id | pizza_name | count 
+-------------+------------+-------
+         101 | Meatlovers |     2
+         101 | Vegetarian |     1
+         102 | Meatlovers |     2
+         102 | Vegetarian |     1
+         103 | Meatlovers |     3
+         103 | Vegetarian |     1
+         104 | Meatlovers |     3
+         105 | Vegetarian |     1
+(8 rows)
+
+6.
 
 
 
