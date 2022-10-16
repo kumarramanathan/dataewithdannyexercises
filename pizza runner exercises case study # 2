@@ -1,0 +1,143 @@
+Danny given us the tables with some requirment to clean the data before start query the data. Especially runner_orders table and customer_orders table;
+
+First we look in to the customer_orders table;  have replicated the customer_orders table as customer_orders1 so that primary table will not get affected
+by our changes.
+
+select * from customer_orders1 ;
+
+postgres=# select * from customer_orders1;
+ order_id | customer_id | pizza_id | exclusions | extras |     order_time      
+----------+-------------+----------+------------+--------+---------------------
+        1 |         101 |        1 |            |        | 2020-01-01 18:05:02
+        2 |         101 |        1 |            |        | 2020-01-01 19:00:52
+        3 |         102 |        1 |            |        | 2020-01-02 23:51:23
+        3 |         102 |        2 |            |        | 2020-01-02 23:51:23
+        4 |         103 |        1 | 4          |        | 2020-01-04 13:23:46
+        4 |         103 |        1 | 4          |        | 2020-01-04 13:23:46
+        4 |         103 |        2 | 4          |        | 2020-01-04 13:23:46
+        5 |         104 |        1 | null       | 1      | 2020-01-08 21:00:29
+        6 |         101 |        2 | null       | null   | 2020-01-08 21:03:13
+        7 |         105 |        2 | null       | 1      | 2020-01-08 21:20:29
+        8 |         102 |        1 | null       | null   | 2020-01-09 23:54:33
+        9 |         103 |        1 | 4          | 1, 5   | 2020-01-10 11:22:59
+       10 |         104 |        1 | null       | null   | 2020-01-11 18:34:49
+       10 |         104 |        1 | 2, 6       | 1, 4   | 2020-01-11 18:34:49
+
+Here the table contains null as string in columns exclusions and extras . We need to update this values to NULL.
+
+postgres=# update customer_orders1 set
+exclusions = case when exclusions = 'null' then null else exclusions end , 
+extras = case when extras = 'null' then null else extras end ;
+UPDATE 14
+
+postgres=# select * from customer_orders1;
+ order_id | customer_id | pizza_id | exclusions | extras |     order_time      
+----------+-------------+----------+------------+--------+---------------------
+        1 |         101 |        1 |            |        | 2020-01-01 18:05:02
+        2 |         101 |        1 |            |        | 2020-01-01 19:00:52
+        3 |         102 |        1 |            |        | 2020-01-02 23:51:23
+        3 |         102 |        2 |            |        | 2020-01-02 23:51:23
+        4 |         103 |        1 | 4          |        | 2020-01-04 13:23:46
+        4 |         103 |        1 | 4          |        | 2020-01-04 13:23:46
+        4 |         103 |        2 | 4          |        | 2020-01-04 13:23:46
+        5 |         104 |        1 |            | 1      | 2020-01-08 21:00:29
+        6 |         101 |        2 |            |        | 2020-01-08 21:03:13
+        7 |         105 |        2 |            | 1      | 2020-01-08 21:20:29
+        8 |         102 |        1 |            |        | 2020-01-09 23:54:33
+        9 |         103 |        1 | 4          | 1, 5   | 2020-01-10 11:22:59
+       10 |         104 |        1 |            |        | 2020-01-11 18:34:49
+       10 |         104 |        1 | 2, 6       | 1, 4   | 2020-01-11 18:34:49
+
+Next table is runner_orders table. Here again replicated the runner_orders tbale as runner_orders1
+
+postgres=# select * from runner_orders;
+ order_id | runner_id |     pickup_time     | distance |  duration  |      cancellation       
+----------+-----------+---------------------+----------+------------+-------------------------
+        1 |         1 | 2020-01-01 18:15:34 | 20km     | 32 minutes | 
+        2 |         1 | 2020-01-01 19:10:54 | 20km     | 27 minutes | 
+        3 |         1 | 2020-01-03 00:12:37 | 13.4km   | 20 mins    | 
+        4 |         2 | 2020-01-04 13:53:03 | 23.4     | 40         | 
+        5 |         3 | 2020-01-08 21:10:57 | 10       | 15         | 
+        6 |         3 | null                | null     | null       | Restaurant Cancellation
+        7 |         2 | 2020-01-08 21:30:45 | 25km     | 25mins     | null
+        8 |         2 | 2020-01-10 00:15:02 | 23.4 km  | 15 minute  | null
+        9 |         2 | null                | null     | null       | Customer Cancellation
+       10 |         1 | 2020-01-11 18:50:20 | 10km     | 10minutes  | null
+(10 rows)
+
+Here if you see pickup_time,distance,duration,cancellation contains null as string , we need to chnage to NULL.
+then distance,duration contains string values km,minutes,min,minute need to extract only numbers.
+
+Finally if you describe the table as below pickup_time should be chnaged to datetime from var char, durration to integer, 
+dstance to decimal and also set that fields as NULL valid columns
+
+postgres=# \d runner_orders1;
+
+Table "public.runner_orders1"
+    Column    |         Type          | Collation | Nullable | Default 
+--------------+-----------------------+-----------+----------+---------
+ order_id     | integer               |           |          | 
+ runner_id    | integer               |           |          | 
+ pickup_time  | character varying(19) |           |          | 
+ distance     | character varying(7)  |           |          | 
+ duration     | character varying(10) |           |          | 
+ cancellation | character varying(23) |           |          | 
+
+
+First cleaning : update values:
+
+postgres=# update runner_orders1 set
+distance = case when distance = 'null' then null
+else substring(distance,'[0-9]{1,2}') end,
+duration = case when duration = 'null' then null
+else substring(duration,'[0-9]{1,2}') end,
+pickup_time = case when distance = 'null' then null
+else pickup_time end,
+cancellation = case cancellation when 'null' then null else cancellation end;
+
+Second cleaning : alter date type and set null:
+
+postgres=# alter table runner_orders1 alter column distance type decimal using ( trim(distance)::decimal(5,1)) , 
+alter column distance drop not null, alter column duration type int using(trim(duration)::int), alter column duration  drop not null ,
+alter column pickup_time drop not null;
+
+postgres=# alter table runner_orders1 alter column pickup_time type timestamp with time zone using to_timestamp ( trim(pickup_time),'YYY-MM-DD H24:MI:SS');
+ALTER TABLE
+
+
+postgres=# select * from runner_orders1;
+ order_id | runner_id |     pickup_time     | distance | duration |      cancellation       
+----------+-----------+---------------------+----------+----------+-------------------------
+        1 |         1 | 2020-01-01 18:15:34 |     20.0 |       32 | 
+        2 |         1 | 2020-01-01 19:10:54 |     20.0 |       27 | 
+        3 |         1 | 2020-01-03 00:12:37 |     13.0 |       20 | 
+        4 |         2 | 2020-01-04 13:53:03 |     23.0 |       40 | 
+        5 |         3 | 2020-01-08 21:10:57 |     10.0 |       15 | 
+        6 |         3 |                     |          |          | Restaurant Cancellation
+        7 |         2 | 2020-01-08 21:30:45 |     25.0 |       25 | 
+        8 |         2 | 2020-01-10 00:15:02 |     23.0 |       15 | 
+        9 |         2 |                     |          |          | Customer Cancellation
+       10 |         1 | 2020-01-11 18:50:20 |     10.0 |       10 | 
+(10 rows)
+
+postgres=# \d runner_orders1;
+                      Table "public.runner_orders1"
+    Column    |           Type           | Collation | Nullable | Default 
+--------------+--------------------------+-----------+----------+---------
+ order_id     | integer                  |           |          | 
+ runner_id    | integer                  |           |          | 
+ pickup_time  | timestamp with time zone |           |          | 
+ distance     | numeric                  |           |          | 
+ duration     | integer                  |           |          | 
+ cancellation | character varying(23)    |           |          | 
+
+ALL SET ready start !
+*******************************************************************************************************************************************************
+
+
+
+
+
+
+
+
