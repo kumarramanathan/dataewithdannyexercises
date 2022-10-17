@@ -191,7 +191,33 @@ postgres=# select a.customer_id,b.pizza_name,count(*) from customer_orders1 a jo
          105 | Vegetarian |     1
 (8 rows)
 
-6.
+6.What was the maximum number of pizzas delivered in a single order?
+
+postgres=# with cte as (select a.order_id , count(b.pizza_id) as CNT  from runner_orders1 a inner
+join customer_orders1 b on a.order_id = b.order_id where a.cancellation is null OR a.cancellation 
+not in ('Restaurant Cancellation','Customer Cancellation') group by a.order_id),
+cte1  as(select order_id , cnt, dense_rank() over (order by cnt desc) as RNK  from cte)
+select order_id, CNT as total_pizzas from cte1 where RNK = 1;
+
+ order_id | total_pizzas 
+----------+--------------
+        4 |            3
+(1 row)
+
+
+7.For each customer, how many delivered pizzas had at least 1 change and how many had no changes?
+
+postgres=# with cte as (select a.customer_id ,  case when extras ~* '\w' or exclusions ~* '\w'  then 'changes' else 'no changes' end as pizzastatus from customer_orders1 a join runner_orders1 b on a.order_id = b.order_id where b.cancellation is null OR b.cancellation = '') select customer_id,pizzastatus,count(pizzastatus) from cte group by customer_id,pizzastatus;
+ customer_id | pizzastatus | count 
+-------------+-------------+-------
+         103 | changes     |     3
+         104 | no changes  |     1
+         104 | changes     |     2
+         105 | changes     |     1
+         102 | no changes  |     3
+         101 | no changes  |     2
+(6 rows)
+
 
 
 
