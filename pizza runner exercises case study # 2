@@ -218,6 +218,72 @@ postgres=# with cte as (select a.customer_id ,  case when extras ~* '\w' or excl
          101 | no changes  |     2
 (6 rows)
 
+8.How many pizzas were delivered that had both exclusions and extras?
+
+postgres=# select  count(b.customer_id),b.customer_id  from runner_orders1 a inner join customer_orders1 b on  a.order_id = b.order_id where (a.cancellation !~* '\w' or a.cancellation is null) and b.extras ~* '\w' and b.exclusions ~* '\w' group by b.customer_id;
+ count | customer_id 
+-------+-------------
+     1 |         104
+(1 row)
+
+9. What was the total volume of pizzas ordered for each hour of the day?
+                            ^
+postgres=# select extract(hours from order_time) as hoursdata , count(order_id) from customer_orders1 group by hoursdata;
+ hoursdata | count 
+-----------+-------
+        18 |     3
+        23 |     3
+        21 |     3
+        11 |     1
+        19 |     1
+        13 |     3
+(6 rows)
+
+postgres=# select count(order_id),date_part('hour',order_time) from customer_orders1 group by date_part('hour',order_time);
+ count | date_part 
+-------+-----------
+     3 |        18
+     3 |        23
+     3 |        21
+     1 |        11
+     1 |        19
+     3 |        13
+(6 rows)
+
+10: What was the volume of orders for each day of the week?
+
+postgres=# select date_part('dow',order_time) as dayofweek ,count(order_id) from customer_orders1 group by dayofweek;
+ dayofweek | count 
+-----------+-------
+         3 |     5
+         5 |     1
+         4 |     3
+         6 |     5
+(4 rows)
+
+********************************************************************************************************************************************************
+
+Runners and customers experience:
+
+postgres=# select date_part('week',registration_date)as week,count(runner_id) from runners where registration_date >= '2021-01-01' group by week ;
+ week | count 
+------+-------
+   53 |     2
+    1 |     1
+    2 |     1
+(3 rows)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
