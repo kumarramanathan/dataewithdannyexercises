@@ -286,6 +286,18 @@ postgres=# select  a.runner_id, avg(abs(extract(epoch from (a.pickup_time-b.orde
          3 |  10
 (3 rows)
 
+3. Is there any relationship between the number of pizzas and how long the order takes to prepare?
+(there are issues with below query - working on it)
+postgres=# with order_details as                                                                                            
+(
+select order_id , count(pizza_id) as pizza_count , order_time from customer_orders1 group by order_id,order_time)
+select o.pizza_count,avg(extract(epoch from (r.pickup_time - o.order_time)/60)) as time_taken from order_details o join runner_orders1 r on  o.order_id = r.order_id where r.distance != 0 group by o.pizza_count;   
+ pizza_count | time_taken 
+-------------+------------
+           3 |  29.283333
+           2 |     18.375
+           1 | 12.3566666
+(3 rows)
 
 
 
