@@ -299,6 +299,19 @@ select o.pizza_count,avg(extract(epoch from (r.pickup_time - o.order_time)/60)) 
            1 | 12.3566666
 (3 rows)
 
+4.What was the average distance travelled for each customer?
+
+postgres=# select avg(r.distance),c.customer_id from runner_orders1 r join customer_orders1 c on c.order_id = r.order_id where distance!=0 group by c.customer_id; 
+         avg         | customer_id 
+---------------------+-------------
+ 20.0000000000000000 |         101
+ 23.0000000000000000 |         103
+ 10.0000000000000000 |         104
+ 25.0000000000000000 |         105
+ 16.3333333333333333 |         102
+(5 rows)
+
+
 
 
 
